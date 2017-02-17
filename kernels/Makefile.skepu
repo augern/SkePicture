@@ -5,7 +5,7 @@
 #                     ___) |   <  __/  __/| |_| |  / __/                       #
 #                    |____/|_|\_\___|_|    \___/  |_____|                      #
 #                                                                              #
-#                        ~ SkePU 2 include Makefile ~                          #
+#                       ~ SkePU 2 internal Makefile ~                          #
 ################################################################################
 
 # NOTE:
@@ -35,13 +35,6 @@ include $(NESTED_LEVEL)Makefile.config
 
 
 
-# Conditionally choose either g++ or nvcc for target compiler,
-# depending on whether CUDA is in the list of backends
-# This will also be used for non-preprocessed compilation of SkePU programs.
-ifneq (,$(findstring cuda, $(BACKENDS)))
-CXX = nvcc
-endif
-
 # Location of SkePU precompiler binary.
 SKEPU = $(LLVM_BIN)/skepu-tool
 
@@ -54,26 +47,30 @@ SKEPU_FLAGS += $(CLANGTOOL_USER_FLAGS)
 
 SKEPU_DEFINES = -DSKEPU_PRECOMPILED
 
-# Activate backend flags for CUDA backend
-ifneq (,$(findstring cuda, $(BACKENDS)))
-BACKEND_FLAGS += -Xcudafe "--diag_suppress=declared_but_not_referenced --diag_suppress=set_but_not_used"
-SKEPU_DEFINES += -DSKEPU_CUDA
-NVCCPASS = -Xcompiler
-FILETYPE = cu
-else
-FILETYPE = cpp
-endif
+# Use .cpp file extension and default C++ compiler by default.
+# This will also be used for non-preprocessed compilation of SkePU programs.
+BACK_EXT = cpp
+BACK_CXX = $(CXX)
 
-# Activate backend flags for OpenMP backend
+# Backend flags for OpenMP backend.
 ifneq (,$(findstring openmp, $(BACKENDS)))
 BACKEND_FLAGS += $(NVCCPASS) -fopenmp
 SKEPU_DEFINES += -DSKEPU_OPENMP
 endif
 
-# Activate backend flags for OpenCL backend
+# Backend flags for OpenCL backend.
 ifneq (,$(findstring opencl, $(BACKENDS)))
 BACKEND_FLAGS += $(OPENCL_FLAGS)
 SKEPU_DEFINES += -DSKEPU_OPENCL
+endif
+
+# Target compiler, file extension and backend flags for CUDA backend.
+ifneq (,$(findstring cuda, $(BACKENDS)))
+BACKEND_FLAGS += -Xcudafe "--diag_suppress=declared_but_not_referenced --diag_suppress=set_but_not_used"
+SKEPU_DEFINES += -DSKEPU_CUDA
+NVCCPASS = -Xcompiler
+FILETYPE = cu
+BACKEND_CXX = nvcc
 endif
 
 # Flags for target compiler (preprocessed sources).
