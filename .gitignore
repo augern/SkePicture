@@ -1,3 +1,7 @@
+kernels/tmp/*
+main.moc
+ui_mainwindow.h
+
 # Compiled Object files
 *.slo
 *.lo
